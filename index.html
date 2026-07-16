@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>桓宸 | 全台地政士查找與評價 - 找地政士、代書辦過戶、繼承、銀行、民間抵押登記</title>
+  <meta name="description" content="桓宸集結全台地政士（代書）的真實評價與留言。辦理過戶、繼承登記、銀行與民間抵押權設定，先看評價、直接留言提問，不用先留電話。免費刊登地政士個人資料。" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #F7F4EC; }
+    #root { min-height: 100vh; }
+    .loading {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Noto Sans TC', sans-serif;
+      color: #52584F;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"><div class="loading">載入中…</div></div>
+
+  <!-- React & Babel (用於直接在瀏覽器執行JSX，正式上線後建議改用Vite打包) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.383.0/umd/lucide.min.js"></script>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- 設定檔：請填入你的 Supabase 資訊 -->
+  <script>
+    window.SUPABASE_URL = 'https://gdrgdsfudlqlsuzriiuw.supabase.co/rest/v1/';
+    window.SUPABASE_ANON_KEY = 'sb_publishable_1T8j2p7hlrkVSmYq1xJ8Cg_O7uP0689';
+  </script>
+
+  <script src="app.js" type="text/babel"></script>
+</body>
+</html>
