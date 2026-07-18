@@ -187,7 +187,7 @@ async function dbUpsertVisit(dateStr, customer, agent) {
 /* ============================================================
    App Root
 ============================================================ */
-function App() {
+export default function App() {
   const [view, setView] = useState({ name: "home" });
   const [agents, setAgents] = useState(null);
   const [cases, setCases] = useState(null); // 案件池
