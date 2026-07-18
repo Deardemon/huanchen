@@ -187,7 +187,7 @@ async function dbUpsertVisit(dateStr, customer, agent) {
 /* ============================================================
    App Root
 ============================================================ */
-export default function App() {
+function App() {
   const [view, setView] = useState({ name: "home" });
   const [agents, setAgents] = useState(null);
   const [cases, setCases] = useState(null); // 案件池
@@ -1826,4 +1826,3 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, style }
 const rootEl = document.getElementById("root");
 const root = ReactDOM.createRoot(rootEl);
 root.render(React.createElement(App));
-
