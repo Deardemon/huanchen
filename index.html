@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>桓宸 | 全台地政士查找與評價</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #F7F4EC; font-family: 'Noto Sans TC', sans-serif; }
+    #root { min-height: 100vh; }
+    .loading { min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #52584F; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .card { background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
+    .agent-card { border: 1px solid #e5e0d8; border-radius: 8px; padding: 1rem; background: #fefcf9; }
+    .agent-name { font-weight: 700; font-size: 1.2rem; color: #2d2a24; }
+    .agent-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0; }
+    .tag { background: #e9e5dd; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; color: #3d3a33; }
+    .badge { background: #A8342A; color: #fff; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.7rem; margin-left: 0.5rem; }
+    input, select, button { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+    button { background: #A8342A; color: #fff; border: none; cursor: pointer; transition: 0.2s; }
+    button:hover { opacity: 0.85; }
+    .search-bar { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .search-bar input { flex: 1; min-width: 200px; }
+    .error-msg { background: #fee; color: #a00; padding: 0.8rem; border-radius: 6px; border: 1px solid #fcc; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="root"><div class="loading">載入中…</div></div>
+
+  <!-- 外部库 (UMD 版本) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <!-- Supabase 配置 -->
+  <script>
+    window.SUPABASE_URL = 'https://avenejzzakocgmoszlto.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2ZW5lanp6YWtvY2dtb3N6bHRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNzQ2MTksImV4cCI6MjA5OTk1MDYxOX0.fmYjoLj2hRomxOE7cnClnVKDkhHArWClX8S0kvej8mA';
+    window._lucide = lucide;   // 让 Babel 脚本中能访问
+  </script>
+
+  <!-- 主应用脚本 (Babel 转译) - 无 import -->
+  <script type="text/babel" data-presets="react">
+    // 解构全局变量
+    const supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    const { useState, useEffect, useCallback, useRef } = React;
+    const { Search, Star, MessageCircle, Shield, Coins, ChevronLeft, Check, Clock, Lock, X, ChevronDown, AlertTriangle, Users, CheckCircle2, XCircle, Send } = window._lucide;
+
+    // ============================================================
+    //  ⚠️ 在此处粘贴你原本的 React 组件（App 及所有子组件）
+    //  但必须删除所有 import 语句，确保全部使用上述全局变量
+    // ============================================================
+
+    // ----- 示例组件（你可以替换为自己的） -----
+    const AgentCard = ({ agent }) => {
+      return (
+        <div className="agent-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="agent-name">{agent.name}</span>
+            {agent.verified && <span className="badge">已認證</span>}
+          </div>
+          <div className="agent-tags">
+            {(agent.tags || []).map(t => <span key={t} className="tag">{t}</span>)}
+          </div>
+          <div style={{ fontSize: '0.9rem', color: '#555' }}>
+            <span>📍 {agent.regions?.join('、') || '全台'}</span>
+          </div>
+          <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#777' }}>
+            {agent.bio?.slice(0, 60)}...
+          </div>
+          <button style={{ marginTop: '0.8rem', width: '100%' }}>聯絡</button>
+        </div>
+      );
+    };
+
+    function App() {
+      const [agents, setAgents] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+      const [searchTerm, setSearchTerm] = useState('');
+      const [regionFilter, setRegionFilter] = useState('');
+
+      const fetchAgents = useCallback(async () => {
+        try {
+          setLoading(true);
+          const { data, error } = await supabase.from('agents').select('*');
+          if (error) throw error;
+          setAgents(data || []);
+          setError(null);
+        } catch (err) {
+          console.error('查詢錯誤:', err);
+          setError(err.message || '無法載入資料，請檢查網路或 Supabase 設定');
+        } finally {
+          setLoading(false);
+        }
+      }, []);
+
+      useEffect(() => {
+        fetchAgents();
+      }, [fetchAgents]);
+
+      const filtered = agents.filter(a => {
+        const matchName = a.name?.includes(searchTerm) || false;
+        const matchRegion = regionFilter ? a.regions?.includes(regionFilter) : true;
+        return matchName && matchRegion;
+      });
+
+      const allRegions = [...new Set(agents.flatMap(a => a.regions || []))];
+
+      return (
+        <div className="container">
+          <h1 style={{ color: '#2d2a24', marginBottom: '1rem' }}>🏛️ 桓宸 · 地政士媒合</h1>
+          <div className="card">
+            <div className="search-bar">
+              <input
+                type="text"
+                placeholder="搜尋地政士姓名..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+              <select value={regionFilter} onChange={e => setRegionFilter(e.target.value)}>
+                <option value="">全部地區</option>
+                {allRegions.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <button onClick={() => { setSearchTerm(''); setRegionFilter(''); }}>重置</button>
+            </div>
+            {error && <div className="error-msg">⚠️ {error}</div>}
+            {loading ? (
+              <p>載入中…</p>
+            ) : (
+              <>
+                <p style={{ marginBottom: '1rem' }}>共 {filtered.length} 位地政士</p>
+                <div className="grid">
+                  {filtered.map(a => <AgentCard key={a.id} agent={a} />)}
+                  {filtered.length === 0 && <p>無符合條件的地政士</p>}
+                </div>
+              </>
+            )}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#aaa', marginTop: '2rem', textAlign: 'center' }}>
+            資料來源：Supabase 示範數據 · 僅供測試
+          </div>
+        </div>
+      );
+    }
+    // ----- 示例结束 -----
+
+    // 渲染（只执行一次）
+    const rootEl = document.getElementById("root");
+    const root = ReactDOM.createRoot(rootEl);
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>
