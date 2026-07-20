@@ -25,7 +25,7 @@ const { useState, useEffect, useCallback, useRef } = React;
 const {
   Search, Star, MessageCircle, Shield, Coins, ChevronLeft, Check, Clock,
   Lock, X, ChevronDown, AlertTriangle, Users, CheckCircle2, XCircle, Send,
-} = window._lucide;   // ← 已修正，只保留這一份解構
+} = window._lucide;
 
 const supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
@@ -85,26 +85,26 @@ function normalizeChineseDigits(text) {
 }
 
 const CONTACT_PATTERNS = [
-  /\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d/, // 任何形式間隔的8位以上連續數字（電話／含破折號或空白分隔）
-  /09\d{2}/, // 台灣手機開頭 09xx
-  /0[2-8][-\s]?\d{3,4}/, // 市話格式
-  /line/i, // 只要出現line字樣就警示（含Line ID、Line:、加Line等各種寫法）
-  /賴|賓|萊/, // 「賴」泛指Line的台式說法及常見同音規避字
-  /加.{0,2}(賴|賓|萊|line|line)/i, // 「加賴」「加賓」「加我賴」等變體
+  /\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d/,
+  /09\d{2}/,
+  /0[2-8][-\s]?\d{3,4}/,
+  /line/i,
+  /賴|賓|萊/,
+  /加.{0,2}(賴|賓|萊|line|line)/i,
   /微信|wechat|whatsapp|telegram|微信號/i,
   /\big\b|\binstagram\b/i,
   /臉書|facebook|fb\b/i,
-  /電話|手機|聯絡方式|連絡方式|連絡我|聯絡我|加我|私訊|私我|找我/, // 即使沒寫出號碼，提到聯絡意圖也先警示，較保守但更安全
-  /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/, // email
-  /[a-zA-Z]{2,}[\d]{1,}|[\d]{1,}[a-zA-Z]{2,}/, // 任何英文字母與數字混合的字串（如 sin276dj、Q123、abc88），常見於帳號ID
-  /[a-zA-Z]{5,}/, // 5個以上連續英文字母（純亂碼ID，如sssifje），無法判斷語意但統計上多為帳號代稱，先保守警示
+  /電話|手機|聯絡方式|連絡方式|連絡我|聯絡我|加我|私訊|私我|找我/,
+  /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/,
+  /[a-zA-Z]{2,}[\d]{1,}|[\d]{1,}[a-zA-Z]{2,}/,
+  /[a-zA-Z]{5,}/,
 ];
 
 function detectContact(text) {
   if (!text) return false;
   const normalized = normalizeChineseDigits(text);
   if (CONTACT_PATTERNS.some((re) => re.test(text))) return true;
-  if (/\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d/.test(normalized)) return true; // 中文數字轉換後再檢查一次
+  if (/\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d[\s-]?\d/.test(normalized)) return true;
   return false;
 }
 
@@ -124,7 +124,10 @@ async function dbLoadAgents(fallback) {
       verified: a.verified || false, banned: a.banned || false,
       joinedAt: a.joined_at || null,
     }));
-  } catch { return fallback; }
+  } catch (e) {
+    console.error('dbLoadAgents error:', e);
+    return fallback;
+  }
 }
 
 async function dbSaveAgent(agent) {
@@ -154,7 +157,10 @@ async function dbLoadCases(fallback) {
       declinedAgentIds: c.declined_agent_ids || [],
       threads: c.threads || {}, ts: c.ts,
     }));
-  } catch { return fallback; }
+  } catch (e) {
+    console.error('dbLoadCases error:', e);
+    return fallback;
+  }
 }
 
 async function dbSaveCase(c) {
@@ -176,7 +182,10 @@ async function dbLoadTransactions(fallback) {
     return data.map(t => ({
       id: t.id, agentId: t.agent_id, label: t.label, points: t.points, price: t.price, ts: t.ts,
     }));
-  } catch { return fallback; }
+  } catch (e) {
+    console.error('dbLoadTransactions error:', e);
+    return fallback;
+  }
 }
 
 async function dbSaveTransaction(tx) {
@@ -194,7 +203,10 @@ async function dbLoadVisits(fallback) {
     const result = {};
     data.forEach(v => { result[v.date_str] = { customer: v.customer, agent: v.agent }; });
     return result;
-  } catch { return fallback; }
+  } catch (e) {
+    console.error('dbLoadVisits error:', e);
+    return fallback;
+  }
 }
 
 async function dbUpsertVisit(dateStr, customer, agent) {
@@ -203,24 +215,26 @@ async function dbUpsertVisit(dateStr, customer, agent) {
   } catch (e) { console.error('dbUpsertVisit error', e); }
 }
 
-
 /* ============================================================
    App Root
 ============================================================ */
 function App() {
   const [view, setView] = useState({ name: "home" });
   const [agents, setAgents] = useState(null);
-  const [cases, setCases] = useState(null); // 案件池
-  const [transactions, setTransactions] = useState(null); // 點數購買記錄
-  const [visits, setVisits] = useState(null); // 每日瀏覽量 { [dateStr]: { customer: n, agent: n } }
+  const [cases, setCases] = useState(null);
+  const [transactions, setTransactions] = useState(null);
+  const [visits, setVisits] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [adminAuthed, setAdminAuthed] = useState(false);
 
   useEffect(() => {
     (async () => {
+      console.log('開始載入資料...');
       const a = await dbLoadAgents(SEED_AGENTS);
+      console.log('agents:', a);
       const c = await dbLoadCases([]);
+      console.log('cases:', c);
       const tx = await dbLoadTransactions([]);
       const v = await dbLoadVisits({});
       setAgents(a);
@@ -228,6 +242,7 @@ function App() {
       setTransactions(tx);
       setVisits(v);
       setLoading(false);
+      console.log('載入完成');
     })();
   }, []);
 
@@ -274,7 +289,6 @@ function App() {
     await persistVisits(next);
   };
 
-  /* ---------- actions ---------- */
   const createCase = async (data) => {
     if (detectContact(data.problemText)) {
       showToast("偵測到案件說明中可能包含聯繫方式，請勿留下電話或Line，以免遭不法業者或詐騙集團利用", "warn");
@@ -287,9 +301,9 @@ function App() {
       region: data.region,
       caseType: data.caseType,
       problemText: data.problemText.trim(),
-      status: "open", // open | matched | closed
+      status: "open",
       matchedAgentId: null,
-      threads: {}, // { [agentId]: { messages: [...], hasFirstReply: bool, banned: bool } }
+      threads: {},
       ts: Date.now(),
     };
     await persistCases([...cases, newCase]);
@@ -741,12 +755,6 @@ function CaseCard({ theCase, onClick }) {
 }
 
 /* ============================================================
-   Post Case View（民眾發案）
-============================================================ */
-/* ============================================================
-   Admin Dashboard View（平台管理者後台）
-============================================================ */
-/* ============================================================
    Admin Login View（管理者登入）
 ============================================================ */
 function AdminLoginView({ onBack, onLogin }) {
@@ -838,7 +846,7 @@ function AgentVerifyCard({ agent: a, onToggleVerified }) {
 }
 
 function AdminDashboardView({ agents, cases, transactions, visits, onBack, onDeleteMessage, onForceBan, onUnban, onLogout, onToggleVerified }) {
-  const [tab, setTab] = useState("overview"); // overview | messages
+  const [tab, setTab] = useState("overview");
   const todayStr = new Date().toISOString().slice(0, 10);
   const dayKeys = Object.keys(visits).sort().reverse();
 
@@ -847,7 +855,6 @@ function AdminDashboardView({ agents, cases, transactions, visits, onBack, onDel
   const todayTx = transactions.filter((t) => new Date(t.ts).toISOString().slice(0, 10) === todayStr);
   const totalRevenue = transactions.reduce((s, t) => s + (t.price || 0), 0);
 
-  // 攤平所有留言，供留言管理頁使用
   const allMessages = [];
   cases.forEach((c) => {
     Object.entries(c.threads || {}).forEach(([agentId, thread]) => {
@@ -890,7 +897,6 @@ function AdminDashboardView({ agents, cases, transactions, visits, onBack, onDel
 
       {tab === "overview" && (
         <>
-          {/* 今日總覽 */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
             <StatBox label="今日民眾瀏覽" value={visits[todayStr]?.customer || 0} />
             <StatBox label="今日地政士瀏覽" value={visits[todayStr]?.agent || 0} />
@@ -900,7 +906,6 @@ function AdminDashboardView({ agents, cases, transactions, visits, onBack, onDel
             <StatBox label="累積總營收" value={`NT$${totalRevenue}`} />
           </div>
 
-          {/* 每日瀏覽量趨勢 */}
           <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: "0 0 12px" }}>每日瀏覽量</h3>
           <div style={{ background: "#fff", border: `1px solid ${LINE_C}`, borderRadius: 6, overflow: "hidden", marginBottom: 28 }}>
             <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
@@ -922,7 +927,6 @@ function AdminDashboardView({ agents, cases, transactions, visits, onBack, onDel
             </table>
           </div>
 
-          {/* 新加入地政士 */}
           <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: "0 0 12px" }}>地政士加入紀錄</h3>
           <p style={{ fontSize: 12, color: INK_SOFT, margin: "0 0 14px" }}>請至內政部地政士查詢系統人工核對下列資料是否屬實：<a href="https://resim.moi.gov.tw/Home/AgentIndex" target="_blank" rel="noopener noreferrer" style={{ color: SEAL }}>resim.moi.gov.tw</a></p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
@@ -932,7 +936,6 @@ function AdminDashboardView({ agents, cases, transactions, visits, onBack, onDel
             ))}
           </div>
 
-          {/* 新發案民眾 */}
           <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: "0 0 12px" }}>民眾發案紀錄</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
             {cases.length === 0 && <div style={{ padding: 16, textAlign: "center", color: INK_SOFT, background: "#fff", border: `1px solid ${LINE_C}`, borderRadius: 6 }}>尚無資料</div>}
@@ -951,7 +954,6 @@ function AdminDashboardView({ agents, cases, transactions, visits, onBack, onDel
             ))}
           </div>
 
-          {/* 點數購買記錄 */}
           <h3 style={{ fontSize: 15.5, fontWeight: 700, margin: "0 0 12px" }}>點數／月費購買記錄</h3>
           <div style={{ background: "#fff", border: `1px solid ${LINE_C}`, borderRadius: 6, overflow: "hidden" }}>
             <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
@@ -1001,7 +1003,7 @@ function TabButtonAdmin({ active, onClick, children }) {
 }
 
 function MessageModerationPanel({ flaggedMessages, allMessages, onDeleteMessage, onForceBan, onUnban }) {
-  const [view, setView] = useState("flagged"); // flagged | all
+  const [view, setView] = useState("flagged");
 
   const list = view === "flagged" ? flaggedMessages : allMessages;
 
@@ -1085,7 +1087,7 @@ const thStyle = { padding: "10px 14px", fontSize: 12, color: INK_SOFT, fontWeigh
 const tdStyle = { padding: "10px 14px" };
 
 /* ============================================================
-   My Cases View（民眾用聯繫方式查詢自己發過的案件）
+   My Cases View
 ============================================================ */
 function MyCasesView({ cases, onBack, onOpenCase }) {
   const [contact, setContact] = useState("");
@@ -1146,7 +1148,9 @@ function MyCasesView({ cases, onBack, onOpenCase }) {
   );
 }
 
-
+/* ============================================================
+   Post Case View
+============================================================ */
 function PostCaseView({ onBack, onSubmit }) {
   const [form, setForm] = useState({ customerName: "", customerContact: "", region: "", caseType: "", problemText: "" });
   const valid = form.customerName.trim() && form.customerContact.trim() && form.region && form.caseType && form.problemText.trim();
@@ -1193,7 +1197,7 @@ function PostCaseView({ onBack, onSubmit }) {
 }
 
 /* ============================================================
-   Case Detail View（民眾視角）
+   Case Detail View
 ============================================================ */
 function CaseDetailView({ theCase, agents, onBack, onCustomerMessage, onProposeMatch, onRespondMatch, onRequestUnban, viewerRole = "customer" }) {
   const [activeAgentId, setActiveAgentId] = useState(null);
@@ -1421,7 +1425,7 @@ function ThreadPanel({ theCase, agent, thread, draft, setDraft, onBack, onSend, 
 }
 
 /* ============================================================
-   Agent Console View（地政士後台）
+   Agent Console View
 ============================================================ */
 function AgentProfileEditor({ agent, onUpdateProfile }) {
   const [form, setForm] = useState({
@@ -1529,7 +1533,7 @@ function AgentConsoleView({ agents, cases, onBack, onAgentReply, onBanThread, on
   const [activeCaseId, setActiveCaseId] = useState(null);
   const [draft, setDraft] = useState("");
   const [showBuy, setShowBuy] = useState(false);
-  const [tab, setTab] = useState("cases"); // cases | profile
+  const [tab, setTab] = useState("cases");
 
   const agent = agents.find((a) => a.id === selectedAgentId);
   const openCases = cases.filter((c) => c.status === "open" || (c.status === "pending_match" && c.matchedAgentId === selectedAgentId) || (c.status === "matched" && c.matchedAgentId === selectedAgentId));
@@ -1687,7 +1691,7 @@ function BuyPointsForm({ agentId, onBuyPoints, onClose }) {
 }
 
 /* ============================================================
-   Join View（地政士登錄）
+   Join View
 ============================================================ */
 function JoinView({ onBack, onSubmit }) {
   const [form, setForm] = useState({
@@ -1846,10 +1850,6 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, style }
 const rootEl = document.getElementById("root");
 const root = ReactDOM.createRoot(rootEl);
 root.render(React.createElement(App));
-
-
-const _r = ReactDOM.createRoot(document.getElementById('root'));
-_r.render(React.createElement(App));
 </script>
 </body>
 </html>
